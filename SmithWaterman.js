@@ -19,6 +19,16 @@ var t_name = t_contents[0].split("|")[1];
 var t = t_contents.slice(1, t_contents.length).join("");
 
 var score_matrix = generateScoreMatrix(s, t);
+
+for (var k = 0; k <= s.length; k++) {
+    var line = "";
+    for (var l = 0; l <= t.length; l++)
+    {
+        line += score_matrix[k][l] + "\t";
+    }
+    console.log(line);
+}
+
 traceBack(s, t, score_matrix);
 
 var score = getMaxScore(score_matrix);
@@ -34,12 +44,17 @@ function generateScoreMatrix(s, t) {
     var score_matrix = [];
 
     // Read sequences from files into s and t
-    for (var s_index = 0; s_index < s.length; s_index++) {
-        for (var t_index = 0; t_index < t.length; t_index++) {
-            if (s_index == 0 || t_index == 0) {
-                if (!score_matrix[s_index]) {
+    for (var s_index = 0; s_index <= s.length; s_index++)
+    {
+        for (var t_index = 0; t_index <= t.length; t_index++)
+        {
+            if (s_index == 0 || t_index == 0)
+            {
+                if (!score_matrix[s_index])
+                {
                     score_matrix[s_index] = [];
                 }
+
                 score_matrix[s_index][t_index] = 0;
                 continue;
             }
@@ -48,14 +63,15 @@ function generateScoreMatrix(s, t) {
             var vertical_score = score_matrix[s_index - 1][t_index];
             var horizontal_score = score_matrix[s_index][t_index - 1];
 
-            var match_s_t = BLOSUM62.getAlignmentScore(s[s_index], t[t_index]);
-            var match_s_dash = BLOSUM62.getAlignmentScore(s[s_index], "-");
-            var match_dash_t = BLOSUM62.getAlignmentScore("-", t[t_index]);
+            var match_s_t = BLOSUM62.getAlignmentScore(s[s_index - 1], t[t_index - 1]);
+            var match_s_dash = BLOSUM62.getAlignmentScore(s[s_index - 1], "-");
+            var match_dash_t = BLOSUM62.getAlignmentScore("-", t[t_index - 1]);
 
             var score = Math.max(
                 diagonal_score + match_s_t,
                 vertical_score + match_s_dash,
-                horizontal_score + match_dash_t
+                horizontal_score + match_dash_t,
+                0
             );
 
             score_matrix[s_index][t_index] = score;
@@ -70,9 +86,12 @@ function traceBack(s, t, score_matrix) {
     var max_score_s_index = 0;
     var max_score_t_index = 0;
 
-    for (var s_index = 0; s_index < score_matrix.length; s_index++) {
-        for (var t_index = 0; t_index < score_matrix[0].length; t_index++) {
-            if (score_matrix[s_index][t_index] > max_score) {
+    for (var s_index = 0; s_index < score_matrix.length; s_index++)
+    {
+        for (var t_index = 0; t_index < score_matrix[0].length; t_index++)
+        {
+            if (score_matrix[s_index][t_index] > max_score)
+            {
                 max_score = score_matrix[s_index][t_index];
                 max_score_s_index = s_index;
                 max_score_t_index = t_index;
@@ -92,27 +111,27 @@ function traceBack(s, t, score_matrix) {
         var vertical_score = score_matrix[current_s_index - 1][current_t_index];
         var horizontal_score = score_matrix[current_s_index][current_t_index - 1];
 
-        var match_s_t = BLOSUM62.getAlignmentScore(s[current_s_index], t[current_t_index]);
-        var match_s_dash = BLOSUM62.getAlignmentScore(s[current_s_index], "-");
-        var match_dash_t = BLOSUM62.getAlignmentScore("-", t[current_t_index]);
+        var match_s_t = BLOSUM62.getAlignmentScore(s[current_s_index - 1], t[current_t_index - 1]);
+        var match_s_dash = BLOSUM62.getAlignmentScore(s[current_s_index - 1], "-");
+        var match_dash_t = BLOSUM62.getAlignmentScore("-", t[current_t_index - 1]);
 
         if (diagonal_score + match_s_t == current_score)
         {
-            optimal_s_alignment = s[current_s_index] + optimal_s_alignment;
-            optimal_t_alignment = t[current_t_index] + optimal_t_alignment;
+            optimal_s_alignment = s[current_s_index - 1] + optimal_s_alignment;
+            optimal_t_alignment = t[current_t_index - 1] + optimal_t_alignment;
             current_s_index--;
             current_t_index--;
         }
         else if (vertical_score + match_s_dash == current_score)
         {
-            optimal_s_alignment = s[current_s_index] + optimal_s_alignment;
+            optimal_s_alignment = s[current_s_index - 1] + optimal_s_alignment;
             optimal_t_alignment = "-" + optimal_t_alignment;
             current_s_index--;
         }
         else
         {
             optimal_s_alignment = "-" + optimal_s_alignment;
-            optimal_t_alignment = t[current_t_index] + optimal_t_alignment;
+            optimal_t_alignment = t[current_t_index - 1] + optimal_t_alignment;
             current_t_index--;
         }
         current_score = score_matrix[current_s_index][current_t_index];
@@ -120,6 +139,9 @@ function traceBack(s, t, score_matrix) {
 
     for (var i = 0; i < Math.ceil(optimal_s_alignment.length / LINE_LENGTH); i++) {
         var end_index = Math.min((i*LINE_LENGTH) + LINE_LENGTH, optimal_s_alignment.length);
+        /*console.log("end index is: " + end_index);
+        console.log("s alignment length = " + optimal_s_alignment.length);
+        console.log("t alignment length = " + optimal_t_alignment.length);*/
 
         var optimal_s_sub = optimal_s_alignment.substring(i * LINE_LENGTH, end_index);
         console.log(s_name + ":\t" + current_s_index + "\t" + optimal_s_sub);
@@ -128,11 +150,16 @@ function traceBack(s, t, score_matrix) {
 
         var comparison = ""
         for (var j = LINE_LENGTH * i; j < end_index; j++) {
-            if (optimal_s_alignment[j] == optimal_t_alignment[j]) {
+            if (optimal_s_alignment[j] == optimal_t_alignment[j])
+            {
                 comparison += optimal_s_alignment[j];
-            } else if (BLOSUM62.getAlignmentScore(optimal_s_alignment[j], optimal_t_alignment[j]) > 0) {
+            }
+            else if (BLOSUM62.getAlignmentScore(optimal_s_alignment[j], optimal_t_alignment[j]) > 0)
+            {
                 comparison += "+";
-            } else {
+            }
+            else
+            {
                 comparison += " ";
             }
         }
@@ -151,7 +178,8 @@ function traceBack(s, t, score_matrix) {
 function getPValue(s, t, score) {
     var num_greater = 0;
 
-    for (var i = 0; i < NUM_P_VALUE_TRIALS; i++) {
+    for (var i = 0; i < NUM_P_VALUE_TRIALS; i++)
+    {
         var permuted_s = permute(s);
         var score_matrix = generateScoreMatrix(permuted_s, t);
         var max_score = getMaxScore(score_matrix);
@@ -159,14 +187,16 @@ function getPValue(s, t, score) {
             console.log(max_score);
         }*/
 
-        if (max_score >= score) {
+        if (max_score >= score)
+        {
             num_greater++;
         }
     }
 
     var p_value = (num_greater / NUM_P_VALUE_TRIALS);
 
-    if (p_value == 0) {
+    if (p_value == 0)
+    {
         return (1 / NUM_P_VALUE_TRIALS).toExponential();
     }
 
@@ -176,9 +206,12 @@ function getPValue(s, t, score) {
 function getMaxScore(score_matrix) {
     var max_score = 0;
 
-    for (var s_index = 0; s_index < score_matrix.length; s_index++) {
-        for (var t_index = 0; t_index < score_matrix[0].length; t_index++) {
-            if (score_matrix[s_index][t_index] > max_score) {
+    for (var s_index = 0; s_index < score_matrix.length; s_index++)
+    {
+        for (var t_index = 0; t_index < score_matrix[0].length; t_index++)
+        {
+            if (score_matrix[s_index][t_index] > max_score)
+            {
                 max_score = score_matrix[s_index][t_index];
                 max_score_s_index = s_index;
                 max_score_t_index = t_index;
@@ -191,7 +224,8 @@ function getMaxScore(score_matrix) {
 function permute(sequence) {
     var sequence_array = sequence.split("");
 
-    for (var i = sequence_array.length - 1; i > 0; i--) {
+    for (var i = sequence_array.length - 1; i > 0; i--)
+    {
         // Get a random index
         var j = Math.round(Math.random() * i);
 

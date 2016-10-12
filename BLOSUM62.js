@@ -53,8 +53,8 @@ ALIGNMENT_SCORE_MATRIX = [
 ]
 
 exports.getAlignmentScore = function(amino_a, amino_b) {
-    var amino_a_index = AMINO_ENUM[amino_a];
-    var amino_b_index = AMINO_ENUM[amino_b];
+    var amino_a_index = AMINO_ENUM[amino_a.toUpperCase()];
+    var amino_b_index = AMINO_ENUM[amino_b.toUpperCase()];
 
     return ALIGNMENT_SCORE_MATRIX[amino_a_index][amino_b_index];
 }
